@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="ress">
+    <CLASSES>
+      <root url="jar://$APPLICATION_HOME_DIR$/lib/junit-4.12.jar!/" />
+      <root url="jar://$APPLICATION_HOME_DIR$/lib/ant/lib/ant-junit4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
