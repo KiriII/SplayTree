@@ -31,7 +31,6 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
         }
     }
 
-
     private void rotate(Node parent , Node child){
         if ((parent == null) || (child == null)) return;
         Node gparent = parent.parent;
@@ -214,21 +213,23 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
 
     private class TreeIterator implements Iterator<T>{
 
-        Node first = null;
-        Node current = null;
-        Node last = null;
+        public Node first = null;
+        public Node current = null;
+        public Node last = null;
 
         private TreeIterator(Node start , Node end){
             if (root != null){
-                this.first = first;
-                this.last = last;
+                this.first = start;
+                this.last = end;
             }
         }
 
         public Node findNext() {
             Node next ;
             if (current == maximum(root)) return null;
-            if (current == null) return find(first , first.key);
+            if (current == null) {
+                return find(first , first.key);
+            }
             else if (current.right == null && current.parent.left == current)
                 return find(current.parent , current.parent.key);
             else if (current.right != null){
@@ -254,7 +255,8 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
         @Override
         public T next() {
             if (root == null) throw new NoSuchElementException();
-            return findNext().key;
+            current = findNext();
+            return current.key;
         }
     }
 
@@ -267,7 +269,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
     @NotNull
     @Override
     public SortedSet subSet(T fromElement, T toElement) {
-        SplayTree<T> splay = new SplayTree<T>();
+        SplayTree<T> splay = new SplayTree<>();
         TreeIterator iter = new TreeIterator(minimum(root) , maximum(root));
         while (iter.hasNext()){
             splay.add(iter.current.key);
@@ -331,9 +333,10 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
         int count = 0;
         TreeIterator iter = new TreeIterator(minimum(root) , maximum(root));
         while (iter.hasNext()){
+            iter.next();
             array[count] = iter.current.key;
             count++ ;
-            iter.next();
+
         }
         return array;
     }
@@ -359,8 +362,16 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
     @Override
     public boolean add(T o) {
         if (o != null) {
-            insert(o);
-            return true;
+            if (root == null) {
+                root = new Node(o);
+                size = 1;
+                return true;
+            }
+            if (find(root , o).key == o) return false; // find находит ближайший элемент(в частном случае тот который мы ищем)
+            else {
+                insert(o);
+                return true;
+            }
         }
         else return false;
     }
@@ -369,8 +380,11 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
     public boolean remove(Object o) {
         T t = (T) o;
         if (o != null) {
-            root = delete(t);
-            return true;
+            if (find(root , t).key != o) return false;
+            else {
+                root = delete(t);
+                return true;
+            }
         }
         else return false;
     }
@@ -378,12 +392,14 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
     @Override
     public boolean addAll(@NotNull Collection c) {
         if (c.isEmpty()) return false;
-        TreeIterator iter = new TreeIterator(minimum(root) , maximum(root));
+        T forCheck = null;
+        if (root != null) forCheck = root.key;
+        Iterator iter = c.iterator();
         while (iter.hasNext()){
-            add((T)c);
-            iter.next();
+            add((T)iter.next());
         }
-        return true;
+        if (forCheck != root.key) return true;
+        return false;
     }
 
     @Override
@@ -395,17 +411,21 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
     @Override
     public boolean removeAll(@NotNull Collection c) {
         if (c.isEmpty()) return false;
-        TreeIterator iter = new TreeIterator(minimum(root) , maximum(root));
+        T forCheck = null;
+        if (root != null) forCheck = root.key;
+        Iterator iter = c.iterator();
         while (iter.hasNext()){
-            remove(c);
-            iter.next();
+            remove((T)iter.next());
         }
-        return true;
+        if (forCheck != root.key) return true;
+        return false;
     }
 
     @Override
     public boolean retainAll(@NotNull Collection c) {
-        SplayTree newTree = null;
+        SplayTree newTree = new SplayTree();
+        int startSize = size;
+        boolean forCheck = false;
         Object[] objects = c.toArray();
         for (Object o : objects){
             T t = (T) o;
@@ -413,9 +433,11 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
                 if (newTree.isEmpty()) newTree.root = new Node(t);
                 else newTree.insert(t);
             }
+            else forCheck = true;
         }
         root = newTree.root;
-        return true;
+        if ((forCheck == true ) || (startSize != newTree.size)) return true;
+        return false;
     }
 
     @Override
@@ -424,7 +446,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T>{
         Object[] objects = c.toArray();
         for (Object o : objects) {
             T t = (T) o;
-            if (contains(t) == false) return false;
+            if (!contains(t)) return false;
         }
         return true;
     }
